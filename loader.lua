@@ -16,6 +16,8 @@ local function warnUser(msg)
 	warn("[xd0ts] " .. msg)
 	pcall(function()
 		local Players = game:GetService("Players")
+		local TweenService = game:GetService("TweenService")
+		local RunService = game:GetService("RunService")
 		local lp = Players.LocalPlayer
 		while not lp do
 			task.wait()
@@ -23,15 +25,21 @@ local function warnUser(msg)
 		end
 		local parent = lp:WaitForChild("PlayerGui")
 		pcall(function()
-			local fn = env.gethui
-			if type(fn) == "function" then
-				parent = fn()
+			if type(env.gethui) == "function" then
+				parent = env.gethui()
 			end
 		end)
 		local old = parent:FindFirstChild("xd0tsAccess")
 		if old then
 			old:Destroy()
 		end
+
+		local ACCENT = Color3.fromRGB(88, 140, 255)
+		local ACCENT2 = Color3.fromRGB(160, 100, 255)
+		local RED = Color3.fromRGB(235, 80, 90)
+		local text = tostring(msg)
+		text = text:sub(1, 1):upper() .. text:sub(2)
+
 		local gui = Instance.new("ScreenGui")
 		gui.Name = "xd0tsAccess"
 		gui.ResetOnSpawn = false
@@ -39,59 +47,182 @@ local function warnUser(msg)
 		gui.DisplayOrder = 999
 		gui.Parent = parent
 
-		local box = Instance.new("Frame")
-		box.AnchorPoint = Vector2.new(0.5, 0.5)
-		box.Position = UDim2.fromScale(0.5, 0.5)
-		box.Size = UDim2.fromOffset(340, 140)
-		box.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
-		box.BorderSizePixel = 0
-		box.Parent = gui
-		Instance.new("UICorner", box).CornerRadius = UDim.new(0, 10)
-		local stroke = Instance.new("UIStroke", box)
-		stroke.Color = Color3.fromRGB(200, 60, 60)
-		stroke.Thickness = 1.5
+		local card = Instance.new("CanvasGroup")
+		card.AnchorPoint = Vector2.new(0.5, 0.5)
+		card.Position = UDim2.new(0.5, 0, 0.5, 14)
+		card.Size = UDim2.fromOffset(380, 210)
+		card.BackgroundColor3 = Color3.fromRGB(13, 13, 19)
+		card.BorderSizePixel = 0
+		card.GroupTransparency = 1
+		card.ClipsDescendants = true
+		card.Parent = gui
+		Instance.new("UICorner", card).CornerRadius = UDim.new(0, 12)
 
-		local function label(text, y, h, size, color, font)
+		local stroke = Instance.new("UIStroke", card)
+		stroke.Thickness = 1.5
+		stroke.Color = Color3.new(1, 1, 1)
+		stroke.Transparency = 1
+		local grad = Instance.new("UIGradient", stroke)
+		grad.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, ACCENT),
+			ColorSequenceKeypoint.new(0.5, ACCENT2),
+			ColorSequenceKeypoint.new(1, ACCENT),
+		})
+
+		local shapes = {}
+		for i = 1, 9 do
 			local l = Instance.new("TextLabel")
 			l.BackgroundTransparency = 1
-			l.Position = UDim2.new(0, 16, 0, y)
-			l.Size = UDim2.new(1, -32, 0, h)
-			l.Text = text
+			l.Text = (i % 2 == 0) and "O" or "X"
+			l.Font = Enum.Font.GothamBold
+			l.TextSize = 22 + (i % 3) * 10
+			l.TextColor3 = (i % 3 == 0) and ACCENT2 or ACCENT
+			l.TextTransparency = 0.9
+			l.Size = UDim2.fromOffset(40, 40)
+			l.Position = UDim2.fromOffset((i * 47) % 360, (i * 61) % 200)
+			l.Rotation = (i * 37) % 360
+			l.ZIndex = 1
+			l.Parent = card
+			shapes[#shapes + 1] = { l, 6 + (i % 4) * 3, ((i * 53) % 100) / 100 }
+		end
+
+		local function label(text2, x, y, w, h, size, color, font, align)
+			local l = Instance.new("TextLabel")
+			l.BackgroundTransparency = 1
+			l.Position = UDim2.fromOffset(x, y)
+			l.Size = UDim2.fromOffset(w, h)
+			l.Text = text2
 			l.TextColor3 = color
 			l.TextSize = size
 			l.Font = font
+			l.TextXAlignment = align or Enum.TextXAlignment.Left
 			l.TextWrapped = true
-			l.Parent = box
+			l.ZIndex = 3
+			l.Parent = card
+			return l
 		end
-		label("Access denied", 12, 30, 22, Color3.fromRGB(230, 80, 80), Enum.Font.GothamBold)
-		label(msg, 46, 36, 14, Color3.fromRGB(210, 210, 220), Enum.Font.Gotham)
-		label("message @xd0ts on discord for support", 86, 20, 13, Color3.fromRGB(140, 140, 160), Enum.Font.Gotham)
 
-		local close = Instance.new("TextButton")
-		close.AnchorPoint = Vector2.new(0.5, 1)
-		close.Position = UDim2.new(0.5, 0, 1, -8)
-		close.Size = UDim2.fromOffset(90, 22)
-		close.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
-		close.BorderSizePixel = 0
-		close.Text = "Close"
-		close.TextColor3 = Color3.fromRGB(220, 220, 230)
-		close.TextSize = 13
-		close.Font = Enum.Font.Gotham
-		close.Parent = box
-		Instance.new("UICorner", close).CornerRadius = UDim.new(0, 6)
-		close.MouseButton1Click:Connect(function()
-			gui:Destroy()
+		label("xd0ts", 20, 16, 120, 24, 22, ACCENT, Enum.Font.GothamBold)
+		label("private client", 20, 40, 140, 16, 12, Color3.fromRGB(130, 130, 150), Enum.Font.Gotham)
+
+		local pill = Instance.new("Frame")
+		pill.AnchorPoint = Vector2.new(1, 0)
+		pill.Position = UDim2.new(1, -20, 0, 20)
+		pill.Size = UDim2.fromOffset(112, 24)
+		pill.BackgroundColor3 = RED
+		pill.BackgroundTransparency = 0.82
+		pill.BorderSizePixel = 0
+		pill.ZIndex = 3
+		pill.Parent = card
+		Instance.new("UICorner", pill).CornerRadius = UDim.new(1, 0)
+		local pillStroke = Instance.new("UIStroke", pill)
+		pillStroke.Color = RED
+		pillStroke.Transparency = 0.5
+		local pillText = Instance.new("TextLabel")
+		pillText.BackgroundTransparency = 1
+		pillText.Size = UDim2.fromScale(1, 1)
+		pillText.Text = "ACCESS DENIED"
+		pillText.Font = Enum.Font.GothamBold
+		pillText.TextSize = 11
+		pillText.TextColor3 = RED
+		pillText.ZIndex = 4
+		pillText.Parent = pill
+
+		local line = Instance.new("Frame")
+		line.Position = UDim2.fromOffset(20, 68)
+		line.Size = UDim2.new(1, -40, 0, 1)
+		line.BackgroundColor3 = Color3.fromRGB(40, 40, 54)
+		line.BorderSizePixel = 0
+		line.ZIndex = 3
+		line.Parent = card
+
+		label(text, 20, 80, 340, 28, 20, Color3.fromRGB(240, 240, 248), Enum.Font.GothamBold)
+		label("You don't have access to xd0ts with this key.", 20, 110, 340, 18, 13, Color3.fromRGB(170, 170, 188), Enum.Font.Gotham)
+		label("message @xd0ts on discord for support", 20, 130, 340, 18, 13, Color3.fromRGB(120, 120, 140), Enum.Font.Gotham)
+
+		local function button(txt, x, w, fill, textColor)
+			local b = Instance.new("TextButton")
+			b.Position = UDim2.new(0, x, 1, -46)
+			b.Size = UDim2.fromOffset(w, 30)
+			b.BackgroundColor3 = fill
+			b.BorderSizePixel = 0
+			b.AutoButtonColor = false
+			b.Text = txt
+			b.Font = Enum.Font.GothamBold
+			b.TextSize = 13
+			b.TextColor3 = textColor
+			b.ZIndex = 4
+			b.Parent = card
+			Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
+			b.MouseEnter:Connect(function()
+				TweenService:Create(b, TweenInfo.new(0.15), { BackgroundTransparency = 0.25 }):Play()
+			end)
+			b.MouseLeave:Connect(function()
+				TweenService:Create(b, TweenInfo.new(0.15), { BackgroundTransparency = 0 }):Play()
+			end)
+			return b
+		end
+
+		local copy = button("Copy Discord", 20, 170, ACCENT, Color3.fromRGB(10, 10, 16))
+		local close = button("Close", 200, 160, Color3.fromRGB(34, 34, 46), Color3.fromRGB(225, 225, 235))
+
+		copy.MouseButton1Click:Connect(function()
+			local fn = env.setclipboard or env.toclipboard or env.set_clipboard
+			if type(fn) == "function" then
+				pcall(fn, "xd0ts")
+				copy.Text = "Copied!"
+			else
+				copy.Text = "Discord: xd0ts"
+			end
+			task.delay(1.6, function()
+				if copy.Parent then
+					copy.Text = "Copy Discord"
+				end
+			end)
 		end)
-		task.delay(20, function()
-			if gui.Parent then
+
+		local closing = false
+		local function dismiss()
+			if closing then
+				return
+			end
+			closing = true
+			TweenService:Create(card, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				GroupTransparency = 1,
+				Position = UDim2.new(0.5, 0, 0.5, 14),
+			}):Play()
+			TweenService:Create(stroke, TweenInfo.new(0.22), { Transparency = 1 }):Play()
+			task.delay(0.25, function()
 				gui:Destroy()
+			end)
+		end
+		close.MouseButton1Click:Connect(dismiss)
+
+		TweenService:Create(card, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+			GroupTransparency = 0,
+			Position = UDim2.fromScale(0.5, 0.5),
+		}):Play()
+		TweenService:Create(stroke, TweenInfo.new(0.35), { Transparency = 0.15 }):Play()
+
+		local t0 = os.clock()
+		local conn
+		conn = RunService.RenderStepped:Connect(function()
+			if not gui.Parent then
+				conn:Disconnect()
+				return
+			end
+			local t = os.clock() - t0
+			grad.Rotation = (t * 60) % 360
+			for _, sh in ipairs(shapes) do
+				local l = sh[1]
+				l.Rotation = l.Rotation + sh[2] * 0.016
+				local y = (sh[3] * 260 + t * sh[2]) % 260 - 30
+				l.Position = UDim2.fromOffset(l.Position.X.Offset, y)
 			end
 		end)
-	end)
-end
 
-if type(key) ~= "string" or key == "" then
-	return warnUser("No key set. Use getgenv().script_key = \"YOUR-KEY\" before the loader.")
+		task.delay(25, dismiss)
+	end)
 end
 
 local Players = game:GetService("Players")
