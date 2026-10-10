@@ -18,7 +18,7 @@ if type(shared) == "table" then
 end
 
 local function warnUser(msg)
-	warn("[X Client] " .. msg)
+	warn("[XClient] " .. msg)
 	pcall(function()
 		local Players = game:GetService("Players")
 		local TweenService = game:GetService("TweenService")
@@ -105,8 +105,8 @@ local function warnUser(msg)
 			return l
 		end
 
-		label("X Client", 20, 16, 160, 24, 22, ACCENT, Enum.Font.GothamBold)
-		label("private client", 20, 40, 140, 16, 12, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
+		label("XClient", 20, 16, 160, 24, 22, ACCENT, Enum.Font.GothamBold)
+		label("Ver 1.0", 20, 40, 140, 16, 12, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
 
 		local pill = Instance.new("Frame")
 		pill.AnchorPoint = Vector2.new(1, 0)
@@ -140,7 +140,7 @@ local function warnUser(msg)
 		line.Parent = card
 
 		label(text, 20, 80, 340, 28, 20, Color3.fromRGB(235, 235, 243), Enum.Font.GothamBold)
-		label("You don't have access to X Client with this key.", 20, 110, 340, 18, 13, Color3.fromRGB(170, 170, 188), Enum.Font.Gotham)
+		label("You don't have access to XClient with this key.", 20, 110, 340, 18, 13, Color3.fromRGB(170, 170, 188), Enum.Font.Gotham)
 		label("message @xd0ts on discord for support", 20, 130, 340, 18, 13, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
 
 		local closing = false
