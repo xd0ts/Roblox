@@ -9,7 +9,12 @@ if type(key) ~= "string" or key == "" then
 end
 if type(key) == "string" then
 	key = key:gsub("%s+", "")
-	env.script_key = key
+	env.xd0ts_key = key
+end
+env.script_key = nil
+_G.script_key = nil
+if type(shared) == "table" then
+	shared.script_key = nil
 end
 
 local function warnUser(msg)
@@ -34,8 +39,8 @@ local function warnUser(msg)
 			old:Destroy()
 		end
 
-		local ACCENT = Color3.fromRGB(88, 140, 255)
-		local ACCENT2 = Color3.fromRGB(160, 100, 255)
+		local ACCENT = Color3.fromHSV(0.725, 0.6, 0.97)
+		local ACCENT2 = Color3.fromHSV(0.66, 0.6, 0.97)
 		local RED = Color3.fromRGB(235, 80, 90)
 		local text = tostring(msg)
 		text = text:sub(1, 1):upper() .. text:sub(2)
@@ -47,13 +52,12 @@ local function warnUser(msg)
 		gui.DisplayOrder = 999
 		gui.Parent = parent
 
-		local card = Instance.new("CanvasGroup")
+		local card = Instance.new("Frame")
 		card.AnchorPoint = Vector2.new(0.5, 0.5)
 		card.Position = UDim2.new(0.5, 0, 0.5, 14)
 		card.Size = UDim2.fromOffset(380, 210)
 		card.BackgroundColor3 = Color3.fromRGB(13, 13, 19)
 		card.BorderSizePixel = 0
-		card.GroupTransparency = 1
 		card.ClipsDescendants = true
 		card.Parent = gui
 		Instance.new("UICorner", card).CornerRadius = UDim.new(0, 12)
@@ -61,7 +65,6 @@ local function warnUser(msg)
 		local stroke = Instance.new("UIStroke", card)
 		stroke.Thickness = 1.5
 		stroke.Color = Color3.new(1, 1, 1)
-		stroke.Transparency = 1
 		local grad = Instance.new("UIGradient", stroke)
 		grad.Color = ColorSequence.new({
 			ColorSequenceKeypoint.new(0, ACCENT),
@@ -86,7 +89,7 @@ local function warnUser(msg)
 			shapes[#shapes + 1] = { l, 6 + (i % 4) * 3, ((i * 53) % 100) / 100 }
 		end
 
-		local function label(text2, x, y, w, h, size, color, font, align)
+		local function label(text2, x, y, w, h, size, color, font)
 			local l = Instance.new("TextLabel")
 			l.BackgroundTransparency = 1
 			l.Position = UDim2.fromOffset(x, y)
@@ -95,7 +98,7 @@ local function warnUser(msg)
 			l.TextColor3 = color
 			l.TextSize = size
 			l.Font = font
-			l.TextXAlignment = align or Enum.TextXAlignment.Left
+			l.TextXAlignment = Enum.TextXAlignment.Left
 			l.TextWrapped = true
 			l.ZIndex = 3
 			l.Parent = card
@@ -103,7 +106,7 @@ local function warnUser(msg)
 		end
 
 		label("xd0ts", 20, 16, 120, 24, 22, ACCENT, Enum.Font.GothamBold)
-		label("private client", 20, 40, 140, 16, 12, Color3.fromRGB(130, 130, 150), Enum.Font.Gotham)
+		label("private client", 20, 40, 140, 16, 12, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
 
 		local pill = Instance.new("Frame")
 		pill.AnchorPoint = Vector2.new(1, 0)
@@ -131,15 +134,16 @@ local function warnUser(msg)
 		local line = Instance.new("Frame")
 		line.Position = UDim2.fromOffset(20, 68)
 		line.Size = UDim2.new(1, -40, 0, 1)
-		line.BackgroundColor3 = Color3.fromRGB(40, 40, 54)
+		line.BackgroundColor3 = Color3.fromRGB(34, 34, 48)
 		line.BorderSizePixel = 0
 		line.ZIndex = 3
 		line.Parent = card
 
-		label(text, 20, 80, 340, 28, 20, Color3.fromRGB(240, 240, 248), Enum.Font.GothamBold)
+		label(text, 20, 80, 340, 28, 20, Color3.fromRGB(235, 235, 243), Enum.Font.GothamBold)
 		label("You don't have access to xd0ts with this key.", 20, 110, 340, 18, 13, Color3.fromRGB(170, 170, 188), Enum.Font.Gotham)
-		label("message @xd0ts on discord for support", 20, 130, 340, 18, 13, Color3.fromRGB(120, 120, 140), Enum.Font.Gotham)
+		label("message @xd0ts on discord for support", 20, 130, 340, 18, 13, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
 
+		local closing = false
 		local function button(txt, x, w, fill, textColor)
 			local b = Instance.new("TextButton")
 			b.Position = UDim2.new(0, x, 1, -46)
@@ -155,16 +159,20 @@ local function warnUser(msg)
 			b.Parent = card
 			Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
 			b.MouseEnter:Connect(function()
-				TweenService:Create(b, TweenInfo.new(0.15), { BackgroundTransparency = 0.25 }):Play()
+				if not closing then
+					TweenService:Create(b, TweenInfo.new(0.15), { BackgroundColor3 = fill:Lerp(Color3.new(1, 1, 1), 0.12) }):Play()
+				end
 			end)
 			b.MouseLeave:Connect(function()
-				TweenService:Create(b, TweenInfo.new(0.15), { BackgroundTransparency = 0 }):Play()
+				if not closing then
+					TweenService:Create(b, TweenInfo.new(0.15), { BackgroundColor3 = fill }):Play()
+				end
 			end)
 			return b
 		end
 
-		local copy = button("Copy Discord", 20, 170, ACCENT, Color3.fromRGB(10, 10, 16))
-		local close = button("Close", 200, 160, Color3.fromRGB(34, 34, 46), Color3.fromRGB(225, 225, 235))
+		local copy = button("Copy Discord", 20, 170, ACCENT, Color3.fromRGB(10, 10, 14))
+		local close = button("Close", 200, 160, Color3.fromRGB(31, 31, 44), Color3.fromRGB(235, 235, 243))
 
 		copy.MouseButton1Click:Connect(function()
 			local fn = env.setclipboard or env.toclipboard or env.set_clipboard
@@ -181,28 +189,62 @@ local function warnUser(msg)
 			end)
 		end)
 
-		local closing = false
+		local fades = {}
+		local function collect(inst)
+			local props = {}
+			if inst:IsA("GuiObject") then
+				props.BackgroundTransparency = inst.BackgroundTransparency
+				if inst:IsA("TextLabel") or inst:IsA("TextButton") then
+					props.TextTransparency = inst.TextTransparency
+				end
+			elseif inst:IsA("UIStroke") then
+				props.Transparency = inst.Transparency
+			end
+			if next(props) then
+				fades[#fades + 1] = { inst, props }
+			end
+		end
+		collect(card)
+		collect(stroke)
+		for _, d in ipairs(card:GetDescendants()) do
+			collect(d)
+		end
+
+		local function fadeTo(out, duration, style, dir)
+			local info = TweenInfo.new(duration, style, dir)
+			for _, f in ipairs(fades) do
+				local goal = {}
+				for prop, orig in pairs(f[2]) do
+					goal[prop] = out and 1 or orig
+				end
+				TweenService:Create(f[1], info, goal):Play()
+			end
+		end
+
+		for _, f in ipairs(fades) do
+			for prop in pairs(f[2]) do
+				f[1][prop] = 1
+			end
+		end
+		fadeTo(false, 0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		TweenService:Create(card, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+			Position = UDim2.fromScale(0.5, 0.5),
+		}):Play()
+
 		local function dismiss()
 			if closing then
 				return
 			end
 			closing = true
+			fadeTo(true, 0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 			TweenService:Create(card, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-				GroupTransparency = 1,
 				Position = UDim2.new(0.5, 0, 0.5, 14),
 			}):Play()
-			TweenService:Create(stroke, TweenInfo.new(0.22), { Transparency = 1 }):Play()
-			task.delay(0.25, function()
+			task.delay(0.26, function()
 				gui:Destroy()
 			end)
 		end
 		close.MouseButton1Click:Connect(dismiss)
-
-		TweenService:Create(card, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-			GroupTransparency = 0,
-			Position = UDim2.fromScale(0.5, 0.5),
-		}):Play()
-		TweenService:Create(stroke, TweenInfo.new(0.35), { Transparency = 0.15 }):Play()
 
 		local t0 = os.clock()
 		local conn
@@ -223,6 +265,10 @@ local function warnUser(msg)
 
 		task.delay(25, dismiss)
 	end)
+end
+
+if type(key) ~= "string" or key == "" then
+	return warnUser("No key set. Use getgenv().script_key = \"YOUR-KEY\" before the loader.")
 end
 
 local Players = game:GetService("Players")
