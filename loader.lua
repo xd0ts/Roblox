@@ -1,4 +1,4 @@
-local SERVER = "https://xd0ts-keys.clientapi.workers.dev"
+local SERVER = "https://xclient-keys.clientapi.workers.dev"
 
 local env = (type(getgenv) == "function" and getgenv()) or _G
 local key = env.script_key or _G.script_key or (type(shared) == "table" and shared.script_key)
@@ -9,7 +9,7 @@ if type(key) ~= "string" or key == "" then
 end
 if type(key) == "string" then
 	key = key:gsub("%s+", "")
-	env.xd0ts_key = key
+	env.xclient_key = key
 end
 env.script_key = nil
 _G.script_key = nil
@@ -18,7 +18,7 @@ if type(shared) == "table" then
 end
 
 local function warnUser(msg)
-	warn("[xd0ts] " .. msg)
+	warn("[X Client] " .. msg)
 	pcall(function()
 		local Players = game:GetService("Players")
 		local TweenService = game:GetService("TweenService")
@@ -34,7 +34,7 @@ local function warnUser(msg)
 				parent = env.gethui()
 			end
 		end)
-		local old = parent:FindFirstChild("xd0tsAccess")
+		local old = parent:FindFirstChild("xclientAccess")
 		if old then
 			old:Destroy()
 		end
@@ -46,7 +46,7 @@ local function warnUser(msg)
 		text = text:sub(1, 1):upper() .. text:sub(2)
 
 		local gui = Instance.new("ScreenGui")
-		gui.Name = "xd0tsAccess"
+		gui.Name = "xclientAccess"
 		gui.ResetOnSpawn = false
 		gui.IgnoreGuiInset = true
 		gui.DisplayOrder = 999
@@ -105,7 +105,7 @@ local function warnUser(msg)
 			return l
 		end
 
-		label("xd0ts", 20, 16, 120, 24, 22, ACCENT, Enum.Font.GothamBold)
+		label("X Client", 20, 16, 160, 24, 22, ACCENT, Enum.Font.GothamBold)
 		label("private client", 20, 40, 140, 16, 12, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
 
 		local pill = Instance.new("Frame")
@@ -140,7 +140,7 @@ local function warnUser(msg)
 		line.Parent = card
 
 		label(text, 20, 80, 340, 28, 20, Color3.fromRGB(235, 235, 243), Enum.Font.GothamBold)
-		label("You don't have access to xd0ts with this key.", 20, 110, 340, 18, 13, Color3.fromRGB(170, 170, 188), Enum.Font.Gotham)
+		label("You don't have access to X Client with this key.", 20, 110, 340, 18, 13, Color3.fromRGB(170, 170, 188), Enum.Font.Gotham)
 		label("message @xd0ts on discord for support", 20, 130, 340, 18, 13, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
 
 		local closing = false
@@ -283,8 +283,8 @@ end)
 if not ok or type(body) ~= "string" then
 	return warnUser("Could not reach the key server: " .. tostring(body))
 end
-if body:sub(1, 9) == "-- xd0ts:" then
-	return warnUser((body:gsub("^%-%- xd0ts: ?", "")))
+if body:sub(1, 11) == "-- xclient:" then
+	return warnUser((body:gsub("^%-%- xclient: ?", "")))
 end
 
 local fn, err = loadstring(body)
