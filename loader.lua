@@ -1,4 +1,5 @@
 local SERVER = "https://xclient-keys.clientapi.workers.dev"
+local VERSION = "1.2" -- shown on the loader's error card; change it when you ship a new version
 
 local env = (type(getgenv) == "function" and getgenv()) or _G
 local key = env.script_key or _G.script_key or (type(shared) == "table" and shared.script_key)
@@ -17,7 +18,7 @@ if type(shared) == "table" then
 	shared.script_key = nil
 end
 
-local function warnUser(msg)
+local function warnUser(msg, title)
 	warn("[XClient] " .. msg)
 	pcall(function()
 		local Players = game:GetService("Players")
@@ -55,7 +56,7 @@ local function warnUser(msg)
 		local card = Instance.new("Frame")
 		card.AnchorPoint = Vector2.new(0.5, 0.5)
 		card.Position = UDim2.new(0.5, 0, 0.5, 14)
-		card.Size = UDim2.fromOffset(380, 210)
+		card.Size = UDim2.fromOffset(380, title and 262 or 210)
 		card.BackgroundColor3 = Color3.fromRGB(13, 13, 19)
 		card.BorderSizePixel = 0
 		card.ClipsDescendants = true
@@ -106,7 +107,7 @@ local function warnUser(msg)
 		end
 
 		label("XClient", 20, 12, 160, 30, 30, ACCENT, Enum.Font.SourceSansBold)
-		label("Ver 1.1", 20, 40, 140, 16, 12, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
+		label("Ver " .. VERSION, 20, 40, 140, 16, 12, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
 
 		local pill = Instance.new("Frame")
 		pill.AnchorPoint = Vector2.new(1, 0)
@@ -124,7 +125,7 @@ local function warnUser(msg)
 		local pillText = Instance.new("TextLabel")
 		pillText.BackgroundTransparency = 1
 		pillText.Size = UDim2.fromScale(1, 1)
-		pillText.Text = "ACCESS DENIED"
+		pillText.Text = title and "NOTICE" or "ACCESS DENIED"
 		pillText.Font = Enum.Font.GothamBold
 		pillText.TextSize = 11
 		pillText.TextColor3 = RED
@@ -139,9 +140,15 @@ local function warnUser(msg)
 		line.ZIndex = 3
 		line.Parent = card
 
-		label(text, 20, 80, 340, 28, 20, Color3.fromRGB(235, 235, 243), Enum.Font.GothamBold)
-		label("You don't have access to XClient with this key.", 20, 110, 340, 18, 13, Color3.fromRGB(170, 170, 188), Enum.Font.Gotham)
-		label("message @xd0ts on discord for support", 20, 130, 340, 18, 13, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
+		if title then
+			label(title, 20, 80, 340, 28, 20, Color3.fromRGB(235, 235, 243), Enum.Font.GothamBold)
+			label(text, 20, 110, 340, 70, 13, Color3.fromRGB(170, 170, 188), Enum.Font.Gotham)
+			label("message @xd0ts on discord for support", 20, 186, 340, 18, 13, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
+		else
+			label(text, 20, 80, 340, 28, 20, Color3.fromRGB(235, 235, 243), Enum.Font.GothamBold)
+			label("You don't have access to XClient with this key.", 20, 110, 340, 18, 13, Color3.fromRGB(170, 170, 188), Enum.Font.Gotham)
+			label("message @xd0ts on discord for support", 20, 130, 340, 18, 13, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
+		end
 
 		local closing = false
 		local function button(txt, x, w, fill, textColor)
@@ -290,7 +297,13 @@ if not ok or type(body) ~= "string" then
 	return warnUser("Could not reach the key server: " .. tostring(body))
 end
 if body:sub(1, 11) == "-- xclient:" then
-	return warnUser((body:gsub("^%-%- xclient: ?", "")))
+	local msg = body:gsub("^%-%- xclient: ?", "")
+	local tag, text = msg:match("^(%a+)|(.*)$")
+	local titles = { kill = "Temporarily unavailable", old = "Update required", exp = "Key expired" }
+	if tag and titles[tag] then
+		return warnUser(text, titles[tag])
+	end
+	return warnUser(msg)
 end
 
 local fn, err = loadstring(body)
