@@ -277,8 +277,14 @@ if not game:IsLoaded() then
 end
 local uid = Players.LocalPlayer.UserId
 
+local hwid = ""
+pcall(function()
+	hwid = game:GetService("RbxAnalyticsService"):GetClientId()
+end)
+hwid = tostring(hwid):gsub("[^%w%-_]", "")
+
 local ok, body = pcall(function()
-	return game:HttpGet(SERVER .. "/load?key=" .. key .. "&uid=" .. uid)
+	return game:HttpGet(SERVER .. "/load?key=" .. key .. "&uid=" .. uid .. "&hwid=" .. hwid)
 end)
 if not ok or type(body) ~= "string" then
 	return warnUser("Could not reach the key server: " .. tostring(body))
