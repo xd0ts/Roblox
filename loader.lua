@@ -284,7 +284,7 @@ end)
 hwid = tostring(hwid):gsub("[^%w%-_]", "")
 
 local ok, body = pcall(function()
-	return game:HttpGet(SERVER .. "/load?key=" .. key .. "&uid=" .. uid .. "&hwid=" .. hwid .. "&lv=2")
+	return game:HttpGet(SERVER .. "/load?key=" .. key .. "&uid=" .. uid .. "&hwid=" .. hwid)
 end)
 if not ok or type(body) ~= "string" then
 	return warnUser("Could not reach the key server: " .. tostring(body))
