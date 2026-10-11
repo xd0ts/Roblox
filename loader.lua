@@ -105,8 +105,8 @@ local function warnUser(msg)
 			return l
 		end
 
-		label("XClient", 20, 16, 160, 24, 22, ACCENT, Enum.Font.GothamBold)
-		label("Ver 1.0", 20, 40, 140, 16, 12, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
+		label("XClient", 20, 12, 160, 30, 30, ACCENT, Enum.Font.SourceSansBold)
+		label("Ver 1.1", 20, 40, 140, 16, 12, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
 
 		local pill = Instance.new("Frame")
 		pill.AnchorPoint = Vector2.new(1, 0)
