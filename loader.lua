@@ -203,17 +203,27 @@ local function warnUser(msg, title)
 		end
 
 		copy.MouseButton1Click:Connect(function()
-			if openInvite() then
-				copy.Text = "Opening Discord..."
-			else
-				local fn = env.setclipboard or env.toclipboard or env.set_clipboard
-				if type(fn) == "function" then
-					pcall(fn, DISCORD_INVITE)
-					copy.Text = "Link copied!"
-				else
-					copy.Text = DISCORD_INVITE
-				end
+			-- always copy the link, and also ask the Discord app to open its join prompt
+			local copied = false
+			local fn = env.setclipboard or env.toclipboard or env.set_clipboard
+			if type(fn) == "function" then
+				copied = pcall(fn, DISCORD_INVITE)
 			end
+			local opened = openInvite()
+			local msg
+			if copied and opened then
+				msg = "Link copied, opening Discord..."
+			elseif copied then
+				msg = "Discord link copied to your clipboard"
+			elseif opened then
+				msg = "Opening Discord..."
+			else
+				msg = DISCORD_INVITE
+			end
+			copy.Text = copied and "Link copied!" or (opened and "Opening Discord..." or DISCORD_INVITE)
+			pcall(function()
+				game:GetService("StarterGui"):SetCore("SendNotification", { Title = "XClient", Text = msg, Duration = 4 })
+			end)
 			task.delay(1.8, function()
 				if copy.Parent then
 					copy.Text = "Join Discord"
