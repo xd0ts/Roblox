@@ -564,8 +564,7 @@ end
 
 if type(key) ~= "string" or key == "" then
 	if PROMO_ON then
-		-- while the promo is running, running the loader without a key shows the invite card instead of an error
-		warn("[XClient] No key set. Use getgenv().script_key = \"YOUR-KEY\" before the loader.")
+		-- while the promo is running, running the loader on its own (no key) shows the invite card instead of an error
 		task.spawn(function()
 			pcall(showPromo)
 		end)
@@ -605,10 +604,5 @@ end
 local fn, err = loadstring(body)
 if not fn then
 	return warnUser("Script failed to compile: " .. tostring(err))
-end
-if PROMO_ON then
-	task.spawn(function()
-		pcall(showPromo)
-	end)
 end
 fn()
