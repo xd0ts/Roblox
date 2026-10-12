@@ -283,6 +283,10 @@ local function showPromo()
 	local RunService = game:GetService("RunService")
 	local HttpService = game:GetService("HttpService")
 	local lp = Players.LocalPlayer
+	while not lp do
+		task.wait()
+		lp = Players.LocalPlayer
+	end
 	local parent = lp:WaitForChild("PlayerGui")
 	pcall(function()
 		if type(env.gethui) == "function" then
@@ -559,6 +563,14 @@ local function showPromo()
 end
 
 if type(key) ~= "string" or key == "" then
+	if PROMO_ON then
+		-- while the promo is running, running the loader without a key shows the invite card instead of an error
+		warn("[XClient] No key set. Use getgenv().script_key = \"YOUR-KEY\" before the loader.")
+		task.spawn(function()
+			pcall(showPromo)
+		end)
+		return
+	end
 	return warnUser("No key set. Use getgenv().script_key = \"YOUR-KEY\" before the loader.")
 end
 
