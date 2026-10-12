@@ -1,4 +1,6 @@
 local SERVER = "https://xclient-keys.clientapi.workers.dev"
+local DISCORD_INVITE = "https://discord.gg/Cb28dSJAhB" -- copied by the loader card's button
+local PROMO = "Join our Discord for support and updates. The first 30 members get a free week-long key!"
 local VERSION = "1.2" -- shown on the loader's error card; change it when you ship a new version
 
 local env = (type(getgenv) == "function" and getgenv()) or _G
@@ -56,7 +58,7 @@ local function warnUser(msg, title)
 		local card = Instance.new("Frame")
 		card.AnchorPoint = Vector2.new(0.5, 0.5)
 		card.Position = UDim2.new(0.5, 0, 0.5, 14)
-		card.Size = UDim2.fromOffset(380, title and 262 or 210)
+		card.Size = UDim2.fromOffset(380, title and 288 or 238)
 		card.BackgroundColor3 = Color3.fromRGB(13, 13, 19)
 		card.BorderSizePixel = 0
 		card.ClipsDescendants = true
@@ -143,11 +145,11 @@ local function warnUser(msg, title)
 		if title then
 			label(title, 20, 80, 340, 28, 20, Color3.fromRGB(235, 235, 243), Enum.Font.GothamBold)
 			label(text, 20, 110, 340, 70, 13, Color3.fromRGB(170, 170, 188), Enum.Font.Gotham)
-			label("message @xd0ts on discord for support", 20, 186, 340, 18, 13, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
+			label(PROMO, 20, 184, 340, 36, 13, ACCENT, Enum.Font.GothamMedium)
 		else
 			label(text, 20, 80, 340, 28, 20, Color3.fromRGB(235, 235, 243), Enum.Font.GothamBold)
 			label("You don't have access to XClient with this key.", 20, 110, 340, 18, 13, Color3.fromRGB(170, 170, 188), Enum.Font.Gotham)
-			label("message @xd0ts on discord for support", 20, 130, 340, 18, 13, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
+			label(PROMO, 20, 140, 340, 36, 13, ACCENT, Enum.Font.GothamMedium)
 		end
 
 		local closing = false
@@ -178,20 +180,21 @@ local function warnUser(msg, title)
 			return b
 		end
 
-		local copy = button("Copy Discord", 20, 170, ACCENT, Color3.fromRGB(10, 10, 14))
+		local copy = button(DISCORD_INVITE ~= "" and "Copy Invite" or "Copy Discord", 20, 170, ACCENT, Color3.fromRGB(10, 10, 14))
+		local copyText = DISCORD_INVITE ~= "" and "Copy Invite" or "Copy Discord"
 		local close = button("Close", 200, 160, Color3.fromRGB(31, 31, 44), Color3.fromRGB(235, 235, 243))
 
 		copy.MouseButton1Click:Connect(function()
 			local fn = env.setclipboard or env.toclipboard or env.set_clipboard
 			if type(fn) == "function" then
-				pcall(fn, "xd0ts")
+				pcall(fn, DISCORD_INVITE ~= "" and DISCORD_INVITE or "xd0ts")
 				copy.Text = "Copied!"
 			else
-				copy.Text = "Discord: xd0ts"
+				copy.Text = DISCORD_INVITE ~= "" and DISCORD_INVITE or "Discord: xd0ts"
 			end
 			task.delay(1.6, function()
 				if copy.Parent then
-					copy.Text = "Copy Discord"
+					copy.Text = copyText
 				end
 			end)
 		end)
