@@ -1,6 +1,5 @@
 local SERVER = "https://xclient-keys.clientapi.workers.dev"
 local DISCORD_INVITE = "https://discord.gg/Cb28dSJAhB"
-local PROMO_ON = true -- the welcome card with the Discord invite; set to false to turn it off
 local VERSION = "1.2" -- shown on the loader's error card; change it when you ship a new version
 
 local env = (type(getgenv) == "function" and getgenv()) or _G
@@ -145,11 +144,11 @@ local function warnUser(msg, title)
 		if title then
 			label(title, 20, 80, 340, 28, 20, Color3.fromRGB(235, 235, 243), Enum.Font.GothamBold)
 			label(text, 20, 110, 340, 70, 13, Color3.fromRGB(170, 170, 188), Enum.Font.Gotham)
-			label("message @xd0ts on discord for support", 20, 186, 340, 18, 13, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
+			label("join our discord server for support", 20, 186, 340, 18, 13, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
 		else
 			label(text, 20, 80, 340, 28, 20, Color3.fromRGB(235, 235, 243), Enum.Font.GothamBold)
 			label("You don't have access to XClient with this key.", 20, 110, 340, 18, 13, Color3.fromRGB(170, 170, 188), Enum.Font.Gotham)
-			label("message @xd0ts on discord for support", 20, 130, 340, 18, 13, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
+			label("join our discord server for support", 20, 130, 340, 18, 13, Color3.fromRGB(130, 130, 148), Enum.Font.Gotham)
 		end
 
 		local closing = false
@@ -180,20 +179,44 @@ local function warnUser(msg, title)
 			return b
 		end
 
-		local copy = button("Copy Discord", 20, 170, ACCENT, Color3.fromRGB(10, 10, 14))
+		local copy = button("Join Discord", 20, 170, ACCENT, Color3.fromRGB(10, 10, 14))
 		local close = button("Close", 200, 160, Color3.fromRGB(31, 31, 44), Color3.fromRGB(235, 235, 243))
 
-		copy.MouseButton1Click:Connect(function()
-			local fn = env.setclipboard or env.toclipboard or env.set_clipboard
-			if type(fn) == "function" then
-				pcall(fn, "xd0ts")
-				copy.Text = "Copied!"
-			else
-				copy.Text = "Discord: xd0ts"
+		-- asks the Discord app on this computer to open its "join server" prompt (it listens on a local port);
+		-- if that is not possible the invite link is copied instead
+		local function openInvite()
+			local code = DISCORD_INVITE:match("discord%.gg/([%w%-]+)")
+			local req = env.request or env.http_request or (type(env.syn) == "table" and env.syn.request) or (type(env.http) == "table" and env.http.request)
+			if code and type(req) == "function" then
+				local HttpService = game:GetService("HttpService")
+				local ok, res = pcall(req, {
+					Url = "http://127.0.0.1:6463/rpc?v=1",
+					Method = "POST",
+					Headers = { ["Content-Type"] = "application/json", ["Origin"] = "https://discord.com" },
+					Body = HttpService:JSONEncode({ cmd = "INVITE_BROWSER", args = { code = code }, nonce = HttpService:GenerateGUID(false) }),
+				})
+				if ok and type(res) == "table" and (res.Success or res.StatusCode == 200) then
+					return true
+				end
 			end
-			task.delay(1.6, function()
+			return false
+		end
+
+		copy.MouseButton1Click:Connect(function()
+			if openInvite() then
+				copy.Text = "Opening Discord..."
+			else
+				local fn = env.setclipboard or env.toclipboard or env.set_clipboard
+				if type(fn) == "function" then
+					pcall(fn, DISCORD_INVITE)
+					copy.Text = "Link copied!"
+				else
+					copy.Text = DISCORD_INVITE
+				end
+			end
+			task.delay(1.8, function()
 				if copy.Parent then
-					copy.Text = "Copy Discord"
+					copy.Text = "Join Discord"
 				end
 			end)
 		end)
@@ -276,300 +299,7 @@ local function warnUser(msg, title)
 	end)
 end
 
--- welcome card with the Discord invite: shown while the script loads (it does not wait for it)
-local function showPromo()
-	local Players = game:GetService("Players")
-	local TweenService = game:GetService("TweenService")
-	local RunService = game:GetService("RunService")
-	local HttpService = game:GetService("HttpService")
-	local lp = Players.LocalPlayer
-	while not lp do
-		task.wait()
-		lp = Players.LocalPlayer
-	end
-	local parent = lp:WaitForChild("PlayerGui")
-	pcall(function()
-		if type(env.gethui) == "function" then
-			parent = env.gethui()
-		end
-	end)
-	local old = parent:FindFirstChild("xclientPromo")
-	if old then
-		old:Destroy()
-	end
-
-	local ACCENT = Color3.fromHSV(0.725, 0.6, 0.97)
-	local ACCENT2 = Color3.fromHSV(0.66, 0.6, 0.97)
-	local DIM = Color3.fromRGB(130, 130, 148)
-
-	local gui = Instance.new("ScreenGui")
-	gui.Name = "xclientPromo"
-	gui.ResetOnSpawn = false
-	gui.IgnoreGuiInset = true
-	gui.DisplayOrder = 999
-	gui.Parent = parent
-
-	local card = Instance.new("Frame")
-	card.AnchorPoint = Vector2.new(0.5, 0.5)
-	card.Position = UDim2.new(0.5, 0, 0.5, 14)
-	card.Size = UDim2.fromOffset(380, 232)
-	card.BackgroundColor3 = Color3.fromRGB(13, 13, 19)
-	card.BorderSizePixel = 0
-	card.ClipsDescendants = true
-	card.Parent = gui
-	Instance.new("UICorner", card).CornerRadius = UDim.new(0, 12)
-
-	local stroke = Instance.new("UIStroke", card)
-	stroke.Thickness = 1.5
-	stroke.Color = Color3.new(1, 1, 1)
-	local grad = Instance.new("UIGradient", stroke)
-	grad.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, ACCENT),
-		ColorSequenceKeypoint.new(0.5, ACCENT2),
-		ColorSequenceKeypoint.new(1, ACCENT),
-	})
-
-	local shapes = {}
-	for i = 1, 9 do
-		local l = Instance.new("TextLabel")
-		l.BackgroundTransparency = 1
-		l.Text = (i % 2 == 0) and "O" or "X"
-		l.Font = Enum.Font.GothamBold
-		l.TextSize = 22 + (i % 3) * 10
-		l.TextColor3 = (i % 3 == 0) and ACCENT2 or ACCENT
-		l.TextTransparency = 0.9
-		l.Size = UDim2.fromOffset(40, 40)
-		l.Position = UDim2.fromOffset((i * 47) % 360, (i * 61) % 200)
-		l.Rotation = (i * 37) % 360
-		l.ZIndex = 1
-		l.Parent = card
-		shapes[#shapes + 1] = { l, 6 + (i % 4) * 3, ((i * 53) % 100) / 100 }
-	end
-
-	local function label(text, x, y, w, h, size, color, font)
-		local l = Instance.new("TextLabel")
-		l.BackgroundTransparency = 1
-		l.Position = UDim2.fromOffset(x, y)
-		l.Size = UDim2.fromOffset(w, h)
-		l.Text = text
-		l.TextColor3 = color
-		l.TextSize = size
-		l.Font = font
-		l.TextXAlignment = Enum.TextXAlignment.Left
-		l.TextYAlignment = Enum.TextYAlignment.Top
-		l.TextWrapped = true
-		l.ZIndex = 3
-		l.Parent = card
-		return l
-	end
-
-	label("XClient", 20, 12, 160, 30, 30, ACCENT, Enum.Font.SourceSansBold)
-	label("Ver " .. VERSION, 20, 40, 140, 16, 12, DIM, Enum.Font.Gotham)
-
-	local pill = Instance.new("Frame")
-	pill.AnchorPoint = Vector2.new(1, 0)
-	pill.Position = UDim2.new(1, -20, 0, 20)
-	pill.Size = UDim2.fromOffset(112, 24)
-	pill.BackgroundColor3 = ACCENT
-	pill.BackgroundTransparency = 0.82
-	pill.BorderSizePixel = 0
-	pill.ZIndex = 3
-	pill.Parent = card
-	Instance.new("UICorner", pill).CornerRadius = UDim.new(1, 0)
-	local pillStroke = Instance.new("UIStroke", pill)
-	pillStroke.Color = ACCENT
-	pillStroke.Transparency = 0.5
-	local pillText = Instance.new("TextLabel")
-	pillText.BackgroundTransparency = 1
-	pillText.Size = UDim2.fromScale(1, 1)
-	pillText.Text = "FREE KEYS"
-	pillText.Font = Enum.Font.GothamBold
-	pillText.TextSize = 11
-	pillText.TextColor3 = ACCENT
-	pillText.ZIndex = 4
-	pillText.Parent = pill
-
-	local line = Instance.new("Frame")
-	line.Position = UDim2.fromOffset(20, 68)
-	line.Size = UDim2.new(1, -40, 0, 1)
-	line.BackgroundColor3 = Color3.fromRGB(34, 34, 48)
-	line.BorderSizePixel = 0
-	line.ZIndex = 3
-	line.Parent = card
-
-	label("Join the Discord", 20, 80, 340, 28, 20, Color3.fromRGB(235, 235, 243), Enum.Font.GothamBold)
-	label("Support, updates and giveaways. The first 30 people to join get a free week-long key!", 20, 110, 340, 54, 13, Color3.fromRGB(170, 170, 188), Enum.Font.Gotham)
-
-	local closing = false
-	local function button(txt, x, w, fill, textColor)
-		local b = Instance.new("TextButton")
-		b.Position = UDim2.new(0, x, 1, -46)
-		b.Size = UDim2.fromOffset(w, 30)
-		b.BackgroundColor3 = fill
-		b.BorderSizePixel = 0
-		b.AutoButtonColor = false
-		b.Text = txt
-		b.Font = Enum.Font.GothamBold
-		b.TextSize = 13
-		b.TextColor3 = textColor
-		b.ZIndex = 4
-		b.Parent = card
-		Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
-		b.MouseEnter:Connect(function()
-			if not closing then
-				TweenService:Create(b, TweenInfo.new(0.15), { BackgroundColor3 = fill:Lerp(Color3.new(1, 1, 1), 0.12) }):Play()
-			end
-		end)
-		b.MouseLeave:Connect(function()
-			if not closing then
-				TweenService:Create(b, TweenInfo.new(0.15), { BackgroundColor3 = fill }):Play()
-			end
-		end)
-		return b
-	end
-
-	local join = button("Join Discord", 20, 150, ACCENT, Color3.fromRGB(10, 10, 14))
-	local copy = button("Copy Link", 178, 100, Color3.fromRGB(31, 31, 44), Color3.fromRGB(235, 235, 243))
-	local close = button("Close", 286, 74, Color3.fromRGB(31, 31, 44), Color3.fromRGB(235, 235, 243))
-
-	local function copyLink()
-		local fn = env.setclipboard or env.toclipboard or env.set_clipboard
-		if type(fn) == "function" then
-			return pcall(fn, DISCORD_INVITE)
-		end
-		return false
-	end
-
-	-- asks the Discord app on this computer to open its "join server" prompt (it listens on a local port);
-	-- if that is not possible the link is copied instead
-	local function openInvite()
-		local code = DISCORD_INVITE:match("discord%.gg/([%w%-]+)") or DISCORD_INVITE:match("invite/([%w%-]+)")
-		local req = env.request or env.http_request or (type(env.syn) == "table" and env.syn.request) or (type(env.http) == "table" and env.http.request)
-		if code and type(req) == "function" then
-			local ok, res = pcall(req, {
-				Url = "http://127.0.0.1:6463/rpc?v=1",
-				Method = "POST",
-				Headers = { ["Content-Type"] = "application/json", ["Origin"] = "https://discord.com" },
-				Body = HttpService:JSONEncode({ cmd = "INVITE_BROWSER", args = { code = code }, nonce = HttpService:GenerateGUID(false) }),
-			})
-			if ok and type(res) == "table" and (res.Success or res.StatusCode == 200) then
-				return true
-			end
-		end
-		return false
-	end
-
-	local function flash(b, text, back)
-		b.Text = text
-		task.delay(1.8, function()
-			if b.Parent then
-				b.Text = back
-			end
-		end)
-	end
-
-	join.MouseButton1Click:Connect(function()
-		if openInvite() then
-			flash(join, "Opening Discord...", "Join Discord")
-		elseif copyLink() then
-			flash(join, "Link copied!", "Join Discord")
-		else
-			flash(join, "discord.gg/" .. (DISCORD_INVITE:match("discord%.gg/([%w%-]+)") or ""), "Join Discord")
-		end
-	end)
-	copy.MouseButton1Click:Connect(function()
-		if copyLink() then
-			flash(copy, "Copied!", "Copy Link")
-		else
-			flash(copy, "No clipboard", "Copy Link")
-		end
-	end)
-
-	local fades = {}
-	local function collect(inst)
-		local props = {}
-		if inst:IsA("GuiObject") then
-			props.BackgroundTransparency = inst.BackgroundTransparency
-			if inst:IsA("TextLabel") or inst:IsA("TextButton") then
-				props.TextTransparency = inst.TextTransparency
-			end
-		elseif inst:IsA("UIStroke") then
-			props.Transparency = inst.Transparency
-		end
-		if next(props) then
-			fades[#fades + 1] = { inst, props }
-		end
-	end
-	collect(card)
-	collect(stroke)
-	for _, d in ipairs(card:GetDescendants()) do
-		collect(d)
-	end
-
-	local function fadeTo(out, duration, style, dir)
-		local info = TweenInfo.new(duration, style, dir)
-		for _, f in ipairs(fades) do
-			local goal = {}
-			for prop, orig in pairs(f[2]) do
-				goal[prop] = out and 1 or orig
-			end
-			TweenService:Create(f[1], info, goal):Play()
-		end
-	end
-
-	for _, f in ipairs(fades) do
-		for prop in pairs(f[2]) do
-			f[1][prop] = 1
-		end
-	end
-	fadeTo(false, 0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-	TweenService:Create(card, TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-		Position = UDim2.fromScale(0.5, 0.5),
-	}):Play()
-
-	local function dismiss()
-		if closing then
-			return
-		end
-		closing = true
-		fadeTo(true, 0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-		TweenService:Create(card, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-			Position = UDim2.new(0.5, 0, 0.5, 14),
-		}):Play()
-		task.delay(0.26, function()
-			gui:Destroy()
-		end)
-	end
-	close.MouseButton1Click:Connect(dismiss)
-
-	local t0 = os.clock()
-	local conn
-	conn = RunService.RenderStepped:Connect(function()
-		if not gui.Parent then
-			conn:Disconnect()
-			return
-		end
-		local t = os.clock() - t0
-		grad.Rotation = (t * 60) % 360
-		for _, sh in ipairs(shapes) do
-			local l = sh[1]
-			l.Rotation = l.Rotation + sh[2] * 0.016
-			local y = (sh[3] * 260 + t * sh[2]) % 260 - 30
-			l.Position = UDim2.fromOffset(l.Position.X.Offset, y)
-		end
-	end)
-
-	task.delay(22, dismiss)
-end
-
 if type(key) ~= "string" or key == "" then
-	if PROMO_ON then
-		-- while the promo is running, running the loader on its own (no key) shows the invite card instead of an error
-		task.spawn(function()
-			pcall(showPromo)
-		end)
-		return
-	end
 	return warnUser("No key set. Use getgenv().script_key = \"YOUR-KEY\" before the loader.")
 end
 
